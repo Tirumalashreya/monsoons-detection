@@ -22,6 +22,18 @@ AI/ML project forecasting Indian monsoon rainfall using ENSO, IOD, and SOI clima
 
 **2026 forecast:** a real, live forecast (not backtested) — 2026's pre-season ENSO/IOD/SOI values already exist, so the 10 skilled models produce genuine 2026 predictions. 2027-2030 have no real forecast possible yet (that data doesn't exist until those years happen) — the dashboard instead offers interactive scenario testing for those years.
 
+## Weather-impact vulnerability assessments
+
+Three additional analyses extend the core forecast into downstream impact, using the IPCC risk framework (Risk = Hazard x Exposure x Vulnerability) where relevant:
+
+**1. Agriculture vulnerability** (`agriculture_vulnerability.csv`) — state-level Kharif rice yield, detrended, correlated against each state's matched IMD subdivision(s) rainfall departure. Most weather-vulnerable states: **Chhattisgarh** (0.79 correlation) and **Karnataka** (0.68) — least buffered by irrigation. States like Haryana and Punjab show weak/negative correlation, consistent with heavy irrigation infrastructure decoupling yield from rainfall.
+
+**2. Infrastructure risk** (`infrastructure_risk.csv`) — district-level, combining flood-hazard frequency (from this project's own `risk_flag` analysis) with housing fragility (% dilapidated housing, Census 2011) and population exposure. Most at-risk: West Bengal districts (Murshidabad, South/North 24 Parganas), reflecting high flood frequency combined with fragile housing stock.
+
+**3. Human vulnerability index** (`human_vulnerability_index.csv`) — district-level, combining flood/drought hazard frequency with population (exposure) and % of workforce in agriculture (vulnerability - livelihoods directly exposed to rainfall variability). Most vulnerable: Nashik, Paschim Medinipur, East Godavari — large populations with high agricultural dependency in hazard-prone subdivisions.
+
+All three use a state/district-to-IMD-subdivision crosswalk (built for this project, since state and IMD subdivision boundaries don't align) to connect Census 2011 and crop production data to the rainfall risk analysis above. This crosswalk is an approximation for states split across multiple subdivisions (e.g. Uttar Pradesh, Maharashtra) - a real limitation, noted rather than hidden.
+
 ## Why this differs from the original brief
 
 The original project brief suggested LSTM/Prophet for time-series, generic ENSO indices as input, and didn't specify target granularity or evaluation method. This implementation deliberately diverges:
@@ -62,6 +74,7 @@ dashboard/
 | `rainfall_area-wt_India_1901-2015.csv` | IMD/OGD | National rainfall cross-check |
 | `india_crop_production_1997_2020.csv` | Public crop statistics | Agriculture-impact analysis |
 | `imd_subdivision_boundaries.json` | IMD Mausam portal | Subdivision boundaries for the dashboard map |
+| `india_census_2011_districts.csv` | Census of India 2011 | Population, agricultural workforce, housing condition - vulnerability assessments |
 
 ## Running it
 

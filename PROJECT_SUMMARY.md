@@ -92,7 +92,12 @@ The brief never specified: target granularity (national vs. regional), what "pre
 - [x] Regional (subdivision-level) model — 10/36 show real skill, final models trained and saved
 - [x] Disaster-preparedness risk flag (regional)
 - [x] Agriculture impact check (Kharif rice yield vs. rainfall, detrended)
+- [x] 2026 real forecast (run final models on 2026 pre-season data); 2027–2030 via interactive scenario sliders
+- [x] Dashboard — live interactive predictor (National/Regional), clickable choropleth map of all 36 subdivisions
+- [x] National model swapped to DJF-ONI (weak but real improvement over baseline: RMSE 9.94 vs 9.99)
+- [x] Agriculture vulnerability assessment (state-level, rainfall vs. detrended yield)
+- [x] Infrastructure risk assessment (district-level, flood hazard x housing fragility x population)
+- [x] Human vulnerability index (district-level, IPCC hazard x exposure x vulnerability framework)
+- [x] Pushed to GitHub: github.com/Tirumalashreya/monsoons-detection
 - [ ] Close 2020–2025 rainfall data gap
-- [ ] 2026 real forecast (run final models on 2026 pre-season data) + 2027–2030 scenario tables
-- [ ] Dashboard (National/Regional toggle, choropleth map for regional) — in progress
 
