@@ -1,0 +1,28 @@
+month,SUBDIVISION,predicted_pct_departure,risk_flag
+JUN,Arunachal Pradesh,-31.13,Deficient (drought risk)
+JUN,Bihar,-13.44,Deficient (drought risk)
+JUN,East Madhya Pradesh,-12.77,Deficient (drought risk)
+JUN,East Uttar Pradesh,-15.06,Deficient (drought risk)
+JUN,Haryana Delhi & Chandigarh,10.07,Excess (flood risk)
+JUN,Himachal Pradesh,19.42,Excess (flood risk)
+JUN,Jammu & Kashmir,24.97,Excess (flood risk)
+JUN,Lakshadweep,-7.3,Normal
+JUN,Orissa,-13.96,Deficient (drought risk)
+JUN,Punjab,27.33,Excess (flood risk)
+JUN,Uttarakhand,-9.64,Normal
+JUN,West Uttar Pradesh,-7.97,Normal
+JUL,Arunachal Pradesh,-39.06,Deficient (drought risk)
+JUL,Assam & Meghalaya,-13.16,Deficient (drought risk)
+JUL,Bihar,-15.97,Deficient (drought risk)
+JUL,Himachal Pradesh,-18.75,Deficient (drought risk)
+JUL,Punjab,-23.39,Deficient (drought risk)
+JUL,Rayalseema,-22.63,Deficient (drought risk)
+JUL,Sub Himalayan West Bengal & Sikkim,-12.0,Deficient (drought risk)
+JUL,Telangana,-17.29,Deficient (drought risk)
+AUG,Matathwada,23.37,Excess (flood risk)
+AUG,Naga Mani Mizo Tripura,14.11,Excess (flood risk)
+AUG,Uttarakhand,-10.73,Deficient (drought risk)
+AUG,West Uttar Pradesh,-11.9,Deficient (drought risk)
+SEP,Arunachal Pradesh,-23.28,Deficient (drought risk)
+SEP,Jammu & Kashmir,-26.39,Deficient (drought risk)
+SEP,Lakshadweep,-12.84,Deficient (drought risk)

@@ -42,8 +42,11 @@ def load_data():
     agriculture_vulnerability = pd.read_csv(os.path.join(PROCESSED_DIR, "agriculture_vulnerability.csv"))
     infrastructure_risk = pd.read_csv(os.path.join(PROCESSED_DIR, "infrastructure_risk.csv"))
     human_vulnerability_index = pd.read_csv(os.path.join(PROCESSED_DIR, "human_vulnerability_index.csv"))
+    monthly_forecast_2026 = pd.read_csv(os.path.join(PROCESSED_DIR, "monthly_forecast_2026.csv"))
+    monthly_model_results = pd.read_csv(os.path.join(PROCESSED_DIR, "monthly_model_results.csv"))
     return (national_df, national_djf_df, regional_df, subdivision_results, forecast_2026,
-            agriculture_vulnerability, infrastructure_risk, human_vulnerability_index)
+            agriculture_vulnerability, infrastructure_risk, human_vulnerability_index,
+            monthly_forecast_2026, monthly_model_results)
 
 
 @st.cache_resource
@@ -107,7 +110,8 @@ def build_subdivision_map(skilled, forecast_2026):
 
 
 (national_df, national_djf_df, regional_df, subdivision_results, forecast_2026,
- agriculture_vulnerability, infrastructure_risk, human_vulnerability_index) = load_data()
+ agriculture_vulnerability, infrastructure_risk, human_vulnerability_index,
+ monthly_forecast_2026, monthly_model_results) = load_data()
 
 skilled = subdivision_results[subdivision_results["improvement"] > 0]["SUBDIVISION"].tolist()
 skilled_2026 = forecast_2026.set_index("SUBDIVISION")
@@ -132,7 +136,7 @@ YEAR_DEFAULTS = {
     2030: (0.0, 0.0, 0.0),
 }
 
-mode = st.sidebar.radio("View", ["Regional Predictor", "National Predictor", "Vulnerability Assessments"])
+mode = st.sidebar.radio("View", ["Regional Predictor", "National Predictor", "Monthly Breakdown", "Vulnerability Assessments"])
 
 if mode in ("Regional Predictor", "National Predictor"):
     forecast_year = st.sidebar.selectbox("Forecast year", [2026, 2027, 2028, 2029, 2030])
@@ -147,11 +151,14 @@ if mode in ("Regional Predictor", "National Predictor"):
     default_oni, default_iod, default_soi = YEAR_DEFAULTS[forecast_year]
 
 if mode == "Regional Predictor":
-    st.header(f"All 36 subdivisions — {forecast_year}")
-    st.caption(
-        "Click a dot to select that subdivision below. Grey = no reliable model "
-        "(26 of 36). Red/blue/green = has a real, evaluated forecast (10 of 36)."
-    )
+    st.header(f"{forecast_year} Monsoon Forecast — All 36 Subdivisions")
+    st.subheader("Map color key")
+    k1, k2, k3, k4 = st.columns(4)
+    k1.error("Red = Deficient (drought risk)")
+    k2.info("Blue = Excess (flood risk)")
+    k3.success("Green = Normal")
+    k4.warning("Grey = No reliable model")
+    st.caption("Click any colored dot to select that subdivision below.")
     map_df, map_fig = build_subdivision_map(skilled, forecast_2026)
     map_event = st.plotly_chart(map_fig, on_select="rerun", key="subdiv_scatter_map", selection_mode="points")
 
@@ -272,6 +279,45 @@ elif mode == "National Predictor":
             "1997-2020 technology-driven yield trend is removed - useful context, but "
             "not something this unreliable model should be used to act on."
         )
+
+elif mode == "Monthly Breakdown":
+    st.header("2026 Monthly Forecast Breakdown")
+    st.caption(
+        "Not a specific-date forecast - daily prediction isn't possible with ENSO/IOD/SOI "
+        "(they carry no day-level signal, and no daily rainfall data was used). This is the "
+        "closest honest alternative: separate June/July/August/September forecasts instead "
+        "of one seasonal number, for the specific subdivision-month combinations that showed "
+        "real skill (27 of 144 tested)."
+    )
+
+    monthly_subdivisions = sorted(monthly_forecast_2026["SUBDIVISION"].unique())
+    month_choice_sub = st.selectbox("Subdivision (only ones with at least one skilled month)", monthly_subdivisions)
+
+    sub_months = monthly_forecast_2026[monthly_forecast_2026["SUBDIVISION"] == month_choice_sub].copy()
+    month_order = {"JUN": 0, "JUL": 1, "AUG": 2, "SEP": 3}
+    sub_months["order"] = sub_months["month"].map(month_order)
+    sub_months = sub_months.sort_values("order")
+
+    cols = st.columns(len(sub_months))
+    for col, (_, row) in zip(cols, sub_months.iterrows()):
+        with col:
+            st.metric(row["month"], f"{row['predicted_pct_departure']:.1f}%")
+            if "Deficient" in row["risk_flag"]:
+                st.error(row["risk_flag"])
+            elif "Excess" in row["risk_flag"]:
+                st.info(row["risk_flag"])
+            else:
+                st.success(row["risk_flag"])
+
+    covered_months = set(sub_months["month"])
+    missing = [m for m in ["JUN", "JUL", "AUG", "SEP"] if m not in covered_months]
+    if missing:
+        st.caption(f"{month_choice_sub} has no reliable model for: {', '.join(missing)} - not shown, not guessed.")
+
+    with st.expander("All 27 subdivision-month combinations with real skill"):
+        display = monthly_model_results[monthly_model_results["improvement"] > 0].sort_values("improvement", ascending=False)
+        st.dataframe(display, use_container_width=True)
+        st.caption(f"Out of 144 subdivision-month combinations tested (36 subdivisions x 4 months), {len(display)} showed real skill.")
 
 else:
     st.header("Weather-Impact Vulnerability Assessments")

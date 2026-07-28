@@ -98,6 +98,7 @@ The brief never specified: target granularity (national vs. regional), what "pre
 - [x] Agriculture vulnerability assessment (state-level, rainfall vs. detrended yield)
 - [x] Infrastructure risk assessment (district-level, flood hazard x housing fragility x population)
 - [x] Human vulnerability index (district-level, IPCC hazard x exposure x vulnerability framework)
+- [x] Monthly breakdown forecast (June/July/August/September separately, not just seasonal total) — 27 of 144 subdivision-month combinations show real skill; closest honest alternative to a specific-date forecast, which isn't physically possible with ENSO/IOD/SOI
 - [x] Pushed to GitHub: github.com/Tirumalashreya/monsoons-detection
 - [ ] Close 2020–2025 rainfall data gap
 
