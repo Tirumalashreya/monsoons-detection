@@ -1,54 +1,12 @@
-import json
 import os
 
 import joblib
 import pandas as pd
-import plotly.express as px
 import streamlit as st
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 PROCESSED_DIR = os.path.join(BASE_DIR, "..", "DATA", "processed")
 MODELS_DIR = os.path.join(BASE_DIR, "..", "models")
-RAW_DIR = os.path.join(BASE_DIR, "..", "DATA", "raw")
-
-GEO_NAME_MAP = {
-    "Andaman & Nicobar Islands": "A & N ISLAND",
-    "Arunachal Pradesh": "ARUNACHAL PRADESH",
-    "Assam & Meghalaya": "ASSAM & MEGHALAYA",
-    "Bihar": "BIHAR",
-    "Chhattisgarh": "CHHATTISGARH",
-    "Coastal Andhra Pradesh": "COASTAL ANDHRA PRADESH",
-    "Coastal Karnataka": "COASTAL KARNATAKA",
-    "East Madhya Pradesh": "EAST MADHYA PRADESH",
-    "East Rajasthan": "EAST RAJASTHAN",
-    "East Uttar Pradesh": "EAST UTTAR PRADESH",
-    "Gangetic West Bengal": "GANGETIC WEST BENGAL",
-    "Gujarat Region": "GUJARAT REGION",
-    "Haryana Delhi & Chandigarh": "HAR. CHD & DELHI",
-    "Himachal Pradesh": "HIMACHAL PRADESH",
-    "Jammu & Kashmir": "JAMMU & KASHMIR",
-    "Jharkhand": "JHARKHAND",
-    "Kerala": "KERALA",
-    "Konkan & Goa": "KONKAN & GOA",
-    "Lakshadweep": "LAKSHADWEEP",
-    "Madhya Maharashtra": "MADHYA MAHARASHTRA",
-    "Matathwada": "MARATHWADA",
-    "Naga Mani Mizo Tripura": "N M M T",
-    "North Interior Karnataka": "N. I. KARNATAKA",
-    "Orissa": "ORISSA",
-    "Punjab": "PUNJAB",
-    "Rayalseema": "RAYALASEEMA",
-    "South Interior Karnataka": "S. I. KARNATAKA",
-    "Saurashtra & Kutch": "SAURASHTRA & KUTCH",
-    "Sub Himalayan West Bengal & Sikkim": "SHWB & SIKKIM",
-    "Tamil Nadu": "TAMILNADU & PONDICHERY",
-    "Telangana": "TELANGANA",
-    "Uttarakhand": "UTTARAKHAND",
-    "Vidarbha": "VIDARBHA",
-    "West Madhya Pradesh": "WEST MADHYA PRADESH",
-    "West Rajasthan": "WEST RAJASTHAN",
-    "West Uttar Pradesh": "WEST UTTAR PRADESH",
-}
 
 st.set_page_config(page_title="Indian Monsoon Prediction", layout="wide")
 
@@ -60,7 +18,11 @@ def load_data():
     regional_df = pd.read_csv(os.path.join(PROCESSED_DIR, "regional_df.csv"))
     subdivision_results = pd.read_csv(os.path.join(PROCESSED_DIR, "subdivision_model_results.csv"))
     forecast_2026 = pd.read_csv(os.path.join(PROCESSED_DIR, "forecast_2026.csv"))
-    return national_df, national_djf_df, regional_df, subdivision_results, forecast_2026
+    agriculture_vulnerability = pd.read_csv(os.path.join(PROCESSED_DIR, "agriculture_vulnerability.csv"))
+    infrastructure_risk = pd.read_csv(os.path.join(PROCESSED_DIR, "infrastructure_risk.csv"))
+    human_vulnerability_index = pd.read_csv(os.path.join(PROCESSED_DIR, "human_vulnerability_index.csv"))
+    return (national_df, national_djf_df, regional_df, subdivision_results, forecast_2026,
+            agriculture_vulnerability, infrastructure_risk, human_vulnerability_index)
 
 
 @st.cache_resource
@@ -82,50 +44,9 @@ def risk_band(pct_dep):
     return "Normal"
 
 
-@st.cache_resource
-def load_geojson():
-    with open(os.path.join(RAW_DIR, "imd_subdivision_boundaries.json")) as f:
-        return json.load(f)
+(national_df, national_djf_df, regional_df, subdivision_results, forecast_2026,
+ agriculture_vulnerability, infrastructure_risk, human_vulnerability_index) = load_data()
 
-
-def build_map_df(subdivision_results, forecast_2026, skilled):
-    forecast_lookup = forecast_2026.set_index("SUBDIVISION")
-    rows = []
-    for name, geo_name in GEO_NAME_MAP.items():
-        if name in skilled:
-            row = forecast_lookup.loc[name]
-            status = row["risk_flag"]
-            pred = row["predicted_2026_pct_departure"]
-        else:
-            status = "No reliable model"
-            pred = None
-        rows.append({"SUBDIVISION": name, "geo_name": geo_name, "status": status, "predicted_2026_pct_departure": pred})
-    return pd.DataFrame(rows)
-
-
-def make_map_figure(map_df, geojson):
-    color_map = {
-        "Deficient (drought risk)": "#d62728",
-        "Excess (flood risk)": "#1f77b4",
-        "Normal": "#2ca02c",
-        "No reliable model": "#c7c7c7",
-    }
-    fig = px.choropleth(
-        map_df,
-        geojson=geojson,
-        locations="geo_name",
-        featureidkey="properties.subdivisio",
-        color="status",
-        color_discrete_map=color_map,
-        hover_name="SUBDIVISION",
-        hover_data={"geo_name": False, "predicted_2026_pct_departure": True},
-    )
-    fig.update_geos(fitbounds="locations", visible=False)
-    fig.update_layout(margin={"r": 0, "t": 0, "l": 0, "b": 0}, height=520, legend_title_text="2026 status")
-    return fig
-
-
-national_df, national_djf_df, regional_df, subdivision_results, forecast_2026 = load_data()
 skilled = subdivision_results[subdivision_results["improvement"] > 0]["SUBDIVISION"].tolist()
 skilled_2026 = forecast_2026.set_index("SUBDIVISION")
 climatology_mean = national_df["pct_departure_national"].mean()
@@ -149,50 +70,26 @@ YEAR_DEFAULTS = {
     2030: (0.0, 0.0, 0.0),
 }
 
-mode = st.sidebar.radio("Predictor", ["Regional", "National"])
-forecast_year = st.sidebar.selectbox("Forecast year", [2026, 2027, 2028, 2029, 2030])
-if forecast_year > 2026:
-    st.sidebar.caption(
-        f"{forecast_year}'s real pre-season ENSO/IOD/SOI data doesn't exist yet "
-        "(that year hasn't happened) — sliders start at neutral. Adjust them yourself "
-        "to test a scenario, e.g. El Niño (positive ONI) or La Niña (negative ONI)."
-    )
-else:
-    st.sidebar.caption("2026's real observed pre-season values are pre-filled below.")
+mode = st.sidebar.radio("View", ["Regional Predictor", "National Predictor", "Vulnerability Assessments"])
 
-default_oni, default_iod, default_soi = YEAR_DEFAULTS[forecast_year]
+if mode in ("Regional Predictor", "National Predictor"):
+    forecast_year = st.sidebar.selectbox("Forecast year", [2026, 2027, 2028, 2029, 2030])
+    if forecast_year > 2026:
+        st.sidebar.caption(
+            f"{forecast_year}'s real pre-season ENSO/IOD/SOI data doesn't exist yet "
+            "(that year hasn't happened) — sliders start at neutral. Adjust them yourself "
+            "to test a scenario, e.g. El Niño (positive ONI) or La Niña (negative ONI)."
+        )
+    else:
+        st.sidebar.caption("2026's real observed pre-season values are pre-filled below.")
+    default_oni, default_iod, default_soi = YEAR_DEFAULTS[forecast_year]
 
-if mode == "Regional":
-    st.header(f"All 36 subdivisions — {forecast_year}")
-    st.caption(
-        "Click any subdivision on the map to select it below. Grey = no reliable model "
-        "(26 of 36) — colored ones (10 of 36) have a real, evaluated forecast."
-    )
-
-    geojson = load_geojson()
-    map_df = build_map_df(subdivision_results, forecast_2026, skilled)
-    map_fig = make_map_figure(map_df, geojson)
-    map_event = st.plotly_chart(map_fig, on_select="rerun", key="subdiv_map", selection_mode="points")
-
-    if map_event and map_event.selection and map_event.selection.points:
-        clicked_geo_name = map_event.selection.points[0].get("location")
-        clicked_name = next((n for n, g in GEO_NAME_MAP.items() if g == clicked_geo_name), None)
-        if clicked_name and clicked_name in skilled:
-            st.session_state["sub_choice_widget"] = clicked_name
-        elif clicked_name:
-            st.warning(f"{clicked_name} has no reliable model — pick one of the 10 colored subdivisions instead.")
-
-    st.divider()
-
-    sub_choice = st.sidebar.selectbox(
-        "Subdivision (only ones with a proven working model)",
-        sorted(skilled),
-        key="sub_choice_widget",
-    )
+if mode == "Regional Predictor":
+    sub_choice = st.sidebar.selectbox("Subdivision (only ones with a proven working model)", sorted(skilled))
     st.sidebar.caption(f"{len(skilled)} of 36 subdivisions have demonstrated real forecast skill — only those are selectable here.")
 
     model = load_regional_model(sub_choice)
-    st.subheader(f"{sub_choice} — {forecast_year}")
+    st.header(f"{sub_choice} — {forecast_year}")
 
     col_inputs, col_result = st.columns([1, 1])
 
@@ -244,7 +141,7 @@ if mode == "Regional":
         "other 26 subdivisions, where no real skill was demonstrated."
     )
 
-else:
+elif mode == "National Predictor":
     st.header(f"National — {forecast_year}")
     st.caption(
         "Uses Dec-Jan-Feb ONI (an earlier lag than the regional models) — the one "
@@ -290,3 +187,68 @@ else:
             "1997-2020 technology-driven yield trend is removed - useful context, but "
             "not something this unreliable model should be used to act on."
         )
+
+else:
+    st.header("Weather-Impact Vulnerability Assessments")
+    st.caption(
+        "Three downstream analyses connecting the monsoon forecast to real impact — "
+        "agriculture, infrastructure, and population. Uses a state/district-to-IMD-"
+        "subdivision crosswalk (an approximation for states split across subdivisions)."
+    )
+
+    st.subheader("1. Agriculture vulnerability")
+    st.caption(
+        "State-level Kharif rice yield, detrended, correlated against matched-subdivision "
+        "rainfall departure. Higher correlation = more weather-exposed, less irrigation-buffered."
+    )
+    agri_display = agriculture_vulnerability.rename(columns={
+        "state": "State", "n": "Years", "rain_yield_corr": "Rainfall-Yield Correlation",
+        "drought_yr_residual": "Avg Yield Impact (Drought Years)",
+        "flood_yr_residual": "Avg Yield Impact (Flood Years)",
+    })
+    st.dataframe(agri_display, use_container_width=True)
+    top_agri = agriculture_vulnerability.iloc[0]
+    st.info(f"Most weather-vulnerable state: **{top_agri['state']}** (correlation {top_agri['rain_yield_corr']:.2f})")
+
+    st.divider()
+
+    st.subheader("2. Infrastructure risk")
+    st.caption(
+        "District-level: flood-hazard frequency (from this project's own risk flag) "
+        "combined with % dilapidated housing (Census 2011) and population exposure. "
+        "Top 20 shown, ranked by risk score."
+    )
+    infra_cols = ["District name", "State name", "Population", "dilapidated_pct", "rural_pct", "pct_excess_years", "infra_flood_risk"]
+    infra_top = infrastructure_risk.nlargest(20, "infra_flood_risk")[infra_cols].rename(columns={
+        "District name": "District", "State name": "State",
+        "dilapidated_pct": "Dilapidated Housing %", "rural_pct": "Rural %",
+        "pct_excess_years": "Flood-Risk Years %", "infra_flood_risk": "Infrastructure Risk Score",
+    })
+    st.dataframe(infra_top, use_container_width=True)
+    top_infra = infrastructure_risk.nlargest(1, "infra_flood_risk").iloc[0]
+    st.info(f"Highest infrastructure risk: **{top_infra['District name']}, {top_infra['State name']}**")
+
+    st.divider()
+
+    st.subheader("3. Human vulnerability index")
+    st.caption(
+        "District-level, IPCC framework (Risk = Hazard x Exposure x Vulnerability): "
+        "flood/drought hazard frequency x population x % workforce in agriculture. "
+        "Top 20 shown, ranked by vulnerability score."
+    )
+    human_cols = ["District name", "State name", "Population", "agri_worker_pct", "pct_deficient_years", "pct_excess_years", "human_vulnerability_index"]
+    human_top = human_vulnerability_index.nlargest(20, "human_vulnerability_index")[human_cols].rename(columns={
+        "District name": "District", "State name": "State",
+        "agri_worker_pct": "Agricultural Workforce %", "pct_deficient_years": "Drought Years %",
+        "pct_excess_years": "Flood Years %", "human_vulnerability_index": "Vulnerability Score",
+    })
+    st.dataframe(human_top, use_container_width=True)
+    top_human = human_vulnerability_index.nlargest(1, "human_vulnerability_index").iloc[0]
+    st.info(f"Most vulnerable district: **{top_human['District name']}, {top_human['State name']}**")
+
+    st.divider()
+    st.caption(
+        "All three use a crosswalk mapping states/districts to IMD subdivisions, since "
+        "their boundaries don't align — an approximation, most accurate for states that "
+        "map to a single subdivision, noted rather than hidden."
+    )
