@@ -66,19 +66,46 @@ This re-parses all raw data, re-trains every model, regenerates every CSV in `da
 
 ---
 
-## How the dashboard works
+## How to use the frontend (dashboard)
 
-**Regional Predictor:**
-- The map shows all 36 subdivisions as colored dots: **red = deficient/drought risk, blue = excess/flood risk, green = normal, grey = no reliable model**. Only the 10 subdivisions with proven skill are colored by an actual forecast; the other 26 are grey on purpose — we don't have evidence to color them.
-- Click a colored dot (or use the sidebar dropdown) to select a subdivision.
-- Drag the ENSO/IOD/SOI sliders — the forecast updates live. Defaults are 2026's real observed pre-season values.
-- Pick a different "Forecast year" (2027–2030) to explore scenarios — those years have no real data yet (they haven't happened), so sliders start at neutral and you're testing hypotheticals, not seeing real forecasts.
+After running `streamlit run app.py`, the app opens in your browser with a sidebar on the left (**View** selector) and content on the right. There are four views.
 
-**National Predictor:** same interaction, one predictor (Dec–Jan–Feb ENSO) instead of three, with an explicit note that this model only weakly beats its baseline — treat it as a lead, not a confident forecast.
+### 1. Regional Predictor (default view)
 
-**Monthly Breakdown:** pick a subdivision, see which of June/July/August/September have a real model (not all subdivisions have all four — months without proven skill are explicitly omitted, not guessed).
+1. In the sidebar, make sure **View** is set to "Regional Predictor".
+2. Look at the map at the top of the page. Every dot is one of India's 36 IMD meteorological subdivisions.
+   - **Red** = Deficient (drought risk)
+   - **Blue** = Excess (flood risk)
+   - **Green** = Normal
+   - **Grey** = No reliable model — this subdivision never showed real predictive skill, so it's intentionally left unpredicted rather than guessed
+3. Click any **colored** dot to select that subdivision (clicking a grey dot shows a warning instead, since there's no model for it). You can also just use the **Subdivision** dropdown in the sidebar directly.
+4. In the sidebar, pick a **Forecast year** (2026–2030).
+   - 2026 is a real forecast — the sliders below pre-fill with 2026's actual observed pre-season ENSO/IOD/SOI readings.
+   - 2027–2030 have no real data yet (those years haven't happened) — sliders start at neutral (0,0,0) so you can manually explore "what if" scenarios (e.g. drag ENSO positive to simulate an El Niño year).
+5. Drag the three sliders (**Spring Niño 3.4**, **Spring IOD**, **Spring SOI**) — the "Predicted rainfall departure" and risk label on the right update live as you move them.
+6. Expand **"[Subdivision] — historical accuracy and trend"** to see that subdivision's actual cross-validated performance (baseline vs. model RMSE) and its rainfall history.
+7. Expand **"All 36 subdivisions — full skill table"** to see every subdivision's evaluation result, including the 26 without a reliable model.
 
-**Vulnerability Assessments:** pick a state (agriculture) or a state + district count (infrastructure, human vulnerability) to explore the downstream impact analyses interactively.
+### 2. National Predictor
+
+1. Set **View** to "National Predictor".
+2. Same interaction as Regional, but only one slider (Dec–Jan–Feb Niño 3.4), since that's the only predictor that showed any real improvement nationally.
+3. Read the caption above the slider — it explicitly says this model only weakly beats the baseline, so treat the number as a lead worth watching, not a confident forecast the way the regional predictions are.
+4. Expand **"National historical trend"** and **"Agriculture link"** for supporting context.
+
+### 3. Monthly Breakdown
+
+1. Set **View** to "Monthly Breakdown".
+2. Pick a subdivision from the dropdown — only subdivisions with at least one skilled month are listed.
+3. You'll see a metric card for each month (June/July/August/September) that has a real model for that subdivision, with its predicted % departure and risk label. Months without a reliable model are simply not shown (and a caption tells you which ones are missing) — nothing is guessed.
+4. Expand **"All 27 subdivision-month combinations with real skill"** to see the full list across all subdivisions.
+
+### 4. Vulnerability Assessments
+
+1. Set **View** to "Vulnerability Assessments".
+2. In the sidebar, pick which of the three assessments to view: **Agriculture**, **Infrastructure**, or **Human Vulnerability**.
+3. **Agriculture:** pick a state from the dropdown — see its rainfall-yield correlation, its rank among all states, and a bar chart comparing every state.
+4. **Infrastructure / Human Vulnerability:** pick a state and a number of districts to show (slider) — see that state's top districts ranked by risk/vulnerability score, plus which district is highest nationally.
 
 ---
 
