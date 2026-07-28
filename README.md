@@ -55,7 +55,7 @@ DATA/
   raw/          Original downloaded datasets (ENSO, IOD, SOI, IMD rainfall, crop production, subdivision boundaries)
   processed/    Cleaned, merged, model-ready tables and results
 notebooks/
-  eda.ipynb     Full pipeline: parsing -> feature engineering -> modeling -> evaluation -> forecasting
+  monsoon_prediction_pipeline.ipynb     Full pipeline: parsing -> feature engineering -> modeling -> evaluation -> forecasting -> downstream impact
 models/         Trained final models (.pkl) - only for approaches that beat baseline
 dashboard/
   app.py        Interactive Streamlit predictor
@@ -80,7 +80,7 @@ dashboard/
 
 ```bash
 # Notebook (full pipeline, reproducible end-to-end)
-jupyter nbconvert --to notebook --execute --inplace notebooks/eda.ipynb
+jupyter nbconvert --to notebook --execute --inplace notebooks/monsoon_prediction_pipeline.ipynb
 
 # Dashboard
 cd dashboard

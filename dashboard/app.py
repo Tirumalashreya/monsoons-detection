@@ -11,8 +11,6 @@ PROCESSED_DIR = os.path.join(BASE_DIR, "..", "DATA", "processed")
 MODELS_DIR = os.path.join(BASE_DIR, "..", "models")
 RAW_DIR = os.path.join(BASE_DIR, "..", "DATA", "raw")
 
-# Maps our data's subdivision names to the IMD boundary geojson's names -
-# same 36 subdivisions, different naming convention in each source.
 GEO_NAME_MAP = {
     "Andaman & Nicobar Islands": "A & N ISLAND",
     "Arunachal Pradesh": "ARUNACHAL PRADESH",
@@ -73,11 +71,6 @@ def load_regional_model(subdivision_name):
 
 @st.cache_resource
 def load_national_model():
-    # Swapped to DJF-ONI (Dec-Jan-Feb) - the one approach out of five tried that
-    # showed real (though weak/marginal) improvement over the climatology baseline
-    # in leave-one-year-out CV: RMSE 9.94 vs baseline 9.99. Simpler (1 predictor)
-    # and longer lead time than the old spring (MAM) 3-predictor model, which
-    # never beat baseline at all.
     return joblib.load(os.path.join(MODELS_DIR, "National_DJF_ONI_model.pkl"))
 
 
@@ -138,7 +131,7 @@ skilled_2026 = forecast_2026.set_index("SUBDIVISION")
 climatology_mean = national_df["pct_departure_national"].mean()
 
 NATIONAL_YEAR_DEFAULTS = {
-    2026: -0.37,  # real observed DJF 2025-26 ONI value
+    2026: -0.37,
     2027: 0.0,
     2028: 0.0,
     2029: 0.0,
@@ -149,8 +142,8 @@ st.title("Indian Monsoon Prediction")
 st.caption("Live predictor — adjust ENSO/IOD/SOI, see the forecast update")
 
 YEAR_DEFAULTS = {
-    2026: (0.51, 0.24, -0.1),   # real observed 2026 pre-season values
-    2027: (0.0, 0.0, 0.0),      # not observed yet - neutral placeholder
+    2026: (0.51, 0.24, -0.1),
+    2027: (0.0, 0.0, 0.0),
     2028: (0.0, 0.0, 0.0),
     2029: (0.0, 0.0, 0.0),
     2030: (0.0, 0.0, 0.0),
